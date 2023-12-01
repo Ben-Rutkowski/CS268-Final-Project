@@ -20,6 +20,7 @@ function calcN_i(M::Model, i)
     for j = 1:n
         if G[i,j] <= alphaD
             push!(N_i, j)
+        end
     end
     return N_i
 end

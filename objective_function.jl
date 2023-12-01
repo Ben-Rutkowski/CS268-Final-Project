@@ -1,7 +1,6 @@
 mutable struct Model
     G   # Adjacency Matrix of the graph, g_ij = 0 if no edge between nodes i and j,
         # g_ij = d if there is an edge between i and j and the distance between is d
-
             
     f   # Array of charging capacity for each node i
     F   # Array of demand requirement for each node i
@@ -10,7 +9,7 @@ mutable struct Model
     alpha # The discount factor ( See Paper )
 
     # === Private attributes ===
-    G_hat # Edges of G in which the distances are less than D
+    G_hat  # Edges of G in which the distances are less than D
     N_dist # A vector of N_i^(alpha,D) ( See Paper )
 end
 

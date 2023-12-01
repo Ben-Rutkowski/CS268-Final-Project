@@ -6,6 +6,7 @@ mutable struct Model
     f   # Array of charging capacity for each node i
     F   # Array of demand requirement for each node i
     D   # The distance an EV can drive on a full battery
+    c   # Costs at each site
     alpha # The discount factor ( See Paper )
 
     # === Private attributes ===
@@ -48,4 +49,13 @@ function init!(M::Model)
     end
 
     M.N_dist = N_dist
+end
+
+function costFunction(M::Model, x)
+    n = length(x)
+    sum = 0
+    for i = 1:n
+        sum += c[i]*x[i]
+    end
+    return sum
 end

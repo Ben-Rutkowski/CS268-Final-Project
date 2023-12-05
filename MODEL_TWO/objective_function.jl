@@ -35,7 +35,7 @@ end;
 
 # --- Quantizes the b elements to be in 1,...,M ---
 #     and orders stations by x-value
-#     
+#     pushes the z component to be nonnegative
 function correct(x, B_FIX=-1)
     M, b = (length(x)-1)/3, round(x[end])
     x_correct = []
@@ -43,6 +43,9 @@ function correct(x, B_FIX=-1)
     order = sortperm( [x[3*i-2] for i in 1:Int(M)] )
     for k = 1:Int(M)
         append!(x_correct, x[3*order[k]-2:3*order[k]])
+        if x_correct[end] < 0.0
+            x_correct[end] = 0.0
+        end
     end
 
     b = B_FIX != -1 ? B_FIX : b
@@ -57,15 +60,14 @@ end
 # --- Takes a matrix of uncorrected design variables and ---
 #     returns a list of corrected variables 
 function correctMatrix(M, B_FIX=-1)
-    x_out = []
-    row, col = size(M)
-
-    for j = 1:col
+    col = size(M)[2]
+    matrix = correct(M[:,1], B_FIX)
+    for j = 2:col
         x = correct(M[:,j], B_FIX)
-        push!(x_out , x)
+        matrix = hcat(matrix, x)
     end
 
-    return x_out
+    return matrix
 end
 
 

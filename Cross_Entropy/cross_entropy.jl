@@ -4,26 +4,52 @@ using LinearAlgebra
 
 # ================ Gather Stats ================
 # --- Calculate the mean of a list of vectors of length n ---
-function calcMean(vv)
-    len  = length(vv)
-    n    = length(vv[1]) 
-    mean = zeros(n)
-    for i = 1:len
-        mean += vv[i]
+function calcMean(v)
+    n = length(v) 
+    mean = 0
+    for i = 1:n
+        mean += v[i]
     end
-    return mean/len
+    return mean/n
 end
 
 # --- Calculates the covariance matrix given a list of n-vecs and a mean vec ---
-function calcCov(vv, mean)
-    len = length(vv)
-    n   = length(mean)
-    cov = zeros(n,n)
-    for i = 1:len
-        v = vv[i] - mean
+function calcVar(v, mean)
+    n   = length(v)
+    var = 0
+    for i = 1:n
+        var += (v[i]-mean)*(v[i]-mean)
+    end
+    return var/n
+end
+
+# --- Calculate the mean of a matrix of n rows ---
+function calcMeanMat(mat)
+    row, col = size(mat)
+    mean = zeros(row)
+    for i = 1:col
+        mean += mat[:,i]
+    end
+    return mean/col
+end
+
+# --- Calculates the covariance matrix given a matrix with n rows and a mean vec ---
+function calcCovMat(mat, mean)
+    row, col = size(mat)
+    cov = zeros(row,row)
+    for i = 1:col
+        v = mat[:,i] - mean
         cov += v*v'
     end
-    return cov/len
+    out = cov/col
+    try 
+        cholesky(out)
+    catch
+        # println(out)
+        # println("fail")
+        return I(row)
+    end
+    return out
 end
 
 
@@ -31,28 +57,43 @@ end
 # --- Split Distribution ---
 mutable struct SplitDist
     MvNorms
-    Bi
+    DiscNorm
 
-    function SplitDist(norms, bi)
+    function SplitDist(norms, disc)
         return new(norms, bi)
     end
 end
 
-function sample(D::SplitDist, n)
+function sample(D::SplitDist, n, B_FIX=-1)
     M = length(D.MvNorms)
     x = rand(D.MvNorms[1], n)
     for k = 2:M
         m = rand(D.MvNorms[k], n)
         x = vcat(x, m)
     end
-    b = transpose(rand(D.Bi,n)+ones(n))
+    b = transpose(rand(D.DiscNorm,n))
     x = vcat(x, b)
+    x = correctMatrix(x, B_FIX)
     return x
 end
 
-function recalc!(D::SplitDist, v)
-    M = (length(v[1])-1)/3
-end
+function recalc!(D::SplitDist, mat)
+    M = Int((size(mat)[1]-1)/3)
+    mvnorms = []
+    for i = 1:M
+        mean = calcMeanMat(mat[3*i-2:3*i,:])
+        cov  = calcCovMat(mat[3*i-2:3*i,:], mean)
+        dist = MvNormal(mean, cov)
+        push!(mvnorms, dist)
+    end
+
+    mean = calcMean(mat[end,:])
+    std  = sqrt(calcVar(mat[end,:], mean))
+    discnorm   = Normal(mean, std)
+
+    D.MvNorms  = mvnorms
+    D.DiscNorm = discnorm
+end;
 
 # --- Multivariate Normal Distribution ---
 mutable struct MultiNormal
@@ -69,24 +110,20 @@ function sample(D::MultiNormal, n)
 end
 
 # ================ Cross Entropy with Independant Distributions ================
-function crossEntropyIndp(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
-    # for k = 1:k_max
-    #     x = correctMatrix(rand(P, m), B_FIX)
-    #     return x[1]
-    # end
+function crossEntropy(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
+    
 end
 
-function subCrossEntropy(func, calcDist, P, k_max, m, m_elite)
+function subCrossEntropy(func, P, k_max, m, m_elite, B_FIX=-1)
     for k = 1:k_max
         # --- Gather m samples ---
-        x = rand(P, m)
+        x = sample(P, m, B_FIX)
     
         # --- Find best m_elite samples
-        order = sortperm( [func(x[:,i] for i in 1:m)] )
-        println("Best values: ", x[order[1:m_elite]])
+        order = sortperm( [func(x[:,i]) for i in 1:m] )
 
         # --- Recalculate distribution ---
-        P = calcDist(x[order[1:m_elite]])
+        recalc!(P, x[:,order[1:m_elite]])
     end
 
     return P
@@ -99,7 +136,7 @@ function quadPenalty(M::DemandSystem, x)
     penalty = 0
     for i = 1:N
         gi = max(nodeConstraint_i(M, x, i), 0)
-        println("Node ", i, " penalty: ", gi)
+        # println("Node ", i, " penalty: ", gi)
         penalty += gi*gi
     end
     return penalty

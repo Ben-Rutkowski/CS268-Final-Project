@@ -3,42 +3,56 @@ mutable struct DemandSystem
     Nodes # 2N length vector of xy-coords per node
     F     # N length vector of demand per node
 
-    function DemandSystem(Nodes_in, F_in)
-        new(Nodes_in, F_in)
+    c # Initial cost to build a station
+    f # Scaling cost to scale a station
+
+    function DemandSystem(Nodes_in, F_in, c_in, f_in)
+        new(Nodes_in, F_in, c_in, f_in)
     end
-end
+end;
 
 # --- Gets the coordinates of the ith node ---
 function nCrd(M::DemandSystem, i)
     return M.Nodes[2*i-1], M.Nodes[2*i]
-end
+end;
 
 # --- Gets the demand of the ith node ---
 function nDmd(M::DemandSystem, i)
     return M.F[i]
-end
+end;
 
 
 # ================ Design Variable ================
 # --- Gets the coordinates of the kth station ---
 function sCrd(x, k)
     return x[4*k-3], x[4*k-2]
-end
+end;
 
 # --- Gets the capacity of the kth station ---
 function sCap(x, k)
     return x[4*k-1]
-end
+end;
 
 # --- Gets the building boolean of the kth station ---
 function sB(x, k)
     return x[4*k]
+end;
+
+# --- Quantizes the b_k elements to be 0 or 1 ---
+function correct(x)
+    x_out = x
+    M = length(x)/4
+    for k = 1:M
+        x_out[4*k] = sB(x, k)>=5 ? 1 : 0
+    end
+    return x_out
 end
 
 
 # ================ Objective Function ================
 # --- OBJECTIVE FUNCTION: Total cost of all stations ---
-function cost(x, c, f)
+function costFunc(M::DemandSystem, x)
+    c, f = M.c, M.f
     sz, sb = NaN, NaN
     sum = 0
 
@@ -50,14 +64,14 @@ function cost(x, c, f)
         sum += (c + f*sz)*sb
     end
     return sum
-end
+end;
 
 
 # ================ Constraint Functions ================
 # --- Squared distance between a node and a station ---
 function i_kDist(nu, nv, sx, sy)
     return (nu-sx)*(nu-sx) + (nv-sy)*(nv-sy)
-end
+end;
 
 # --- INEQUALITY CONSTRAINT i: The ith node's demand is met by the stations ---
 #       (  There are N constraints of this form. One for each i = 1,...,N  )
@@ -78,7 +92,7 @@ function nodeConstraint_i(M::DemandSystem, x, i)
     end
 
     return F - sum
-end 
+end;
 
 # --- EQUALITY CONSTRAINT k: The kth station's b_k is a boolean --
 #       (  There are M constraints of this form. One for each k = 1,...,M  )
@@ -86,7 +100,7 @@ end
 function stationConstraint_k(x, k)
     sb = sB(x, k)
     return sb*sb - sb
-end
+end;
 
 
 # ================ Reading Data ================
@@ -109,4 +123,4 @@ function readVariable(x)
     end
 
     return result
-end
+end;

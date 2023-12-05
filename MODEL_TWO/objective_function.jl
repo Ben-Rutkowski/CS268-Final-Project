@@ -70,6 +70,25 @@ function correctMatrix(M, B_FIX=-1)
     return matrix
 end
 
+# --- Takes a design variable and returns just the capacity ---
+function xToZ(x)
+    M = Int((length(x)-1)/3)
+    z = []
+    for k = 1:M
+        push!(z, x[3*k])
+    end
+    return z
+end
+
+# --- Takes a capacity vector and returns a new design variable with capacities ---
+function zToX(z, x)
+    M = Int((length(x)-1)/3)
+    for k = 1:M
+        x[3*k] = z[k]
+    end
+    return x
+end
+
 
 # ================ Objective Function ================
 # --- OBJECTIVE FUNCTION: Total cost of all built stations ---

@@ -111,10 +111,11 @@ end
 
 # ================ Cross Entropy with Independant Distributions ================
 function crossEntropy(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
-    
+    # TODO: add sub routine to nudge the elite samples into the feasible range
+    #       by calling subCrossEntropy again on a different anonymous function
 end
 
-function subCrossEntropy(func, P, k_max, m, m_elite, B_FIX=-1)
+function subCrossEntropy(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
     for k = 1:k_max
         # --- Gather m samples ---
         x = sample(P, m, B_FIX)

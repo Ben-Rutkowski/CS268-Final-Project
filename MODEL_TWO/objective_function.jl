@@ -33,38 +33,35 @@ function sCap(x, k)
     return x[3*k]
 end;
 
-# --- Gets the number of stations built ---
-# function sB(x)
-#     return x[end]
-# end;
-
-# --- Quantizes the b elements to be in 0,...,M ---
-function correct(x)
+# --- Quantizes the b elements to be in 1,...,M ---
+#     and orders stations by x-value
+#     
+function correct(x, B_FIX=-1)
     M, b = (length(x)-1)/3, round(x[end])
+    x_correct = []
 
-    b = b < 0 ? 0.0 :
-        b > M ? float(M) :
-        b
+    order = sortperm( [x[3*i-2] for i in 1:Int(M)] )
+    for k = 1:Int(M)
+        append!(x_correct, x[3*order[k]-2:3*order[k]])
+    end
+
+    b = B_FIX != -1 ? B_FIX : b
+    b = b < 1.0    ? 1.0 :
+        b > M      ? float(M) : 
+        float(b)
+    push!(x_correct, b)
+
+    return x_correct
 end
-
-# --- Corrects an array of design variables ---
-# function correctArray(X)
-#     X_out = X
-#     len = length(X)
-#     for j = 1:len
-#         X_out[j] = correct(X[j])
-#     end
-#     return X_out
-# end
 
 # --- Takes a matrix of uncorrected design variables and ---
 #     returns a list of corrected variables 
-function correctMatrix(M)
+function correctMatrix(M, B_FIX=-1)
     x_out = []
     row, col = size(M)
 
     for j = 1:col
-        x = correct(M[:,j])
+        x = correct(M[:,j], B_FIX)
         push!(x_out , x)
     end
 

@@ -1,5 +1,28 @@
 using LinearAlgebra
 
+# --- Solves a LP in equality form ---
+function equalityLP(A, b, c)
+    m, n = size(A)
+    zz = [(b[i]>=0 ? 1 : -1) for i in 1:m]
+    Z = diagm(zz)
+    A_init = hcat(A, Z)
+    c_init = vcat(zeros(n), ones(m))
+    B, isopt = [n+i for i in 1:m], false
+
+    # Find initial feasible value
+    while !isopt
+        B, isopt = stepSimplex(A_init, b, c_init, B)
+    end
+
+    A_prob_top = hcat(A, I(m))
+    A_prob_bot = hcat(zeros(m,n), I(m))
+    A_prob = vcat(A_prob_top, A_prob_bot)
+    b_prob = vcat(b, zeros(m))
+    c_prob = vcat(c, zeros(m))
+
+    return A_prob, b_prob, c_prob, B
+end
+
 # === Modified Algorithm 11.2 from K&W ===
 function traverseSimplex(A, b, B, q)
     n = size(A, 2)
@@ -18,20 +41,27 @@ function traverseSimplex(A, b, B, q)
             end
         end
     end
+    println("Checked q=", q, " to exchange.")
+    println("Exchanged p=", p, " with xq=", xq_)
     return p, xq_
 end
 
+# === Modified Algorithm 11.3 from K&W ===
 function stepSimplex(A, b, c, B)
     n = size(A, 2)
     B = sort!(B)
     V = sort!(setdiff(1:n, B))
 
+    println("B: ", B, " V: ", V)
+
     AB, AV = A[:,B], A[:,V]
-    xB = AB\b
     cB = c[B]
     lambda = AB'\cB
     cV = c[V]
     muV = cV - AV'*lambda
+
+    println("lambda: ", lambda)
+    println("muV: ", muV)
 
     q, p, xq_, delta = 0, 0, Inf, Inf
     for i in 1:Int(length(muV))
@@ -42,11 +72,16 @@ function stepSimplex(A, b, c, B)
             end
         end
     end
+
     if q == 0
         return (B, true)
     end
 
+    if isinf(xq_)
+        return (B, false)
+    end
+
     j = findfirst(isequal(B[p]), B)
     B[j] = V[q]
-    return (B, false)
+    return (sort(B), false)
 end

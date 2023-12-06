@@ -9,3 +9,7 @@ Documenting the progression of research to include in the writeup
     stations by two different vectors (e.g. switching stations 1 and 2 in x). So we must correct each 
     vector after performing randomly generating one. We do this by sorting on the x-coord.
 
+- We will find the top ten elite samples, force them to be feasible, but optimizing the cost, and then calculate the distrubution
+
+- Seidel failed
+- Implemented Simplex Method

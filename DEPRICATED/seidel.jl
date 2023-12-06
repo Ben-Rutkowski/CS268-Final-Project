@@ -22,26 +22,30 @@ mutable struct Objective
     end
 end
 
-# function printDebug(c::Constraint)
-#     a = c.a
-#     str = join(string.(a), "  ")
-#     print(str, " | ", c.b)
-# end
+function printDebug(c::Constraint)
+    a = c.a
+    str = join(string.(a), "  ")
+    print(str, " | ", c.b)
+end
 
-# function printDebug(o::Objective)
-#     f = o.f
-#     str = join(string.(f), "  ")
-#     print(o.c, " | ", str)
-# end
+function printDebug(o::Objective)
+    f = o.f
+    str = join(string.(f), "  ")
+    print(o.c, " | ", str)
+end
 
 # --- Generates the initial guess for the optimum ---
-function initialGuess(func::Objective)
+function initialGuess(func::Objective, old_guess=[])
     d = length(func.f)
     ans = Float64[]
+    if old_guess == []
+        old_guess = zeros(d)
+    end
     
     for k = 1:d
         if func.f[k] == 0.0
-            push!(ans, 0.0)
+            # push!(ans, 0.0)
+            push!(ans, old_guess[k])
         elseif func.f[k] < 0.0
             push!(ans, Inf)
         else
@@ -86,6 +90,7 @@ end
 # --- Returns a new linear program of one dimension less ---
 function reduceDim(guess, func::Objective, constraints)
     last = constraints[end]
+    println("NUMBER OF CONSTRAINTS: ", length(constraints))
     f, a = func.f, last.a
     
     # --- Find first nonzero a in last constraint ---
@@ -113,12 +118,14 @@ function reduceDim(guess, func::Objective, constraints)
     new_c = func.c + (f[k]*last.b)/ak
     new_func = Objective(new_fs, new_c)
 
-    # print("\n- New Function: ")
-    # printDebug(new_func)
-    # print("\n")
+    print("\n- New Function: ")
+    printDebug(new_func)
+    print("\n")
 
     # --- Recalculate Guess ---
-    new_guess = initialGuess(new_func)
+    # new_guess = initialGuess(new_func)
+    new_guess = initialGuess(new_func, guess)
+    println("    First new guess    ", new_guess)
     sum = 0.0
     neg_inf = false
     pos_inf = false
@@ -136,16 +143,17 @@ function reduceDim(guess, func::Objective, constraints)
             end
         end
     end
+    println("    neg_inf: ", neg_inf, ", pos_inf: ", pos_inf)
     if neg_inf
         if !pos_inf
             new_guess[k] = -Inf
         end
-    else
+    elseif !pos_inf
         new_guess[k] = sum + last.b/ak
     end
 
-    # print("- New Guess: ")
-    # println(new_guess)
+    print("- New Guess: ")
+    println(new_guess)
 
     # --- Recalculate constraints ---
     new_cons = []
@@ -165,53 +173,67 @@ function reduceDim(guess, func::Objective, constraints)
         new_constraint = Constraint(new_as, new_b)
         push!(new_cons, new_constraint)
 
-        # print("- New Constraint ", i, ":\n    ")
-        # printDebug(new_constraint)
-        # print("\n")
+        print("- New Constraint ", i, ":\n    ")
+        printDebug(new_constraint)
+        print("\n")
         
     end
 
     return new_guess, new_func, new_cons
 end
 
+# --- Seidels functions, takes a linear program and finds the minimum ---
+function seidel(func::Objective, constraits)
+    guess = initialGuess(func)
+    return subSeidel(guess, func, constraits)
+end
+
 # --- Subroutine for Seidel ---
 function subSeidel(guess, func::Objective, constraints)
     con_len = length(constraints)
-    idx     = randperm(con_len)
-    # idx     = 1:con_len
+    # idx     = randperm(con_len)
+    idx     = 1:con_len
 
     # --- Test each constraint to see if it is satisfied ---
     for i = 1:con_len
         success = testConstraint(guess, constraints[idx[i]])
-        # println("== CURRENT GUESS: ", guess)
+        println("== CURRENT GUESS: ", guess)
 
         if !success
             # --- DEBUGGING ---
-            # println("== VIOLATED CONSTRAINT: ", idx[i])
-            # print("==    ")
-            # printDebug(constraints[idx[i]])
+            println("== VIOLATED CONSTRAINT: ", idx[i])
+            print("==    ")
+            printDebug(constraints[idx[i]])
 
-            # println("\n\n---RECALCULATING---")
-            # print("- Old Function: ")
-            # printDebug(func)
-            # print("\n")
-            # for j = 1:i
-            #     println("- Old Constraint ", j, ":")
-            #     print("    ")
-            #     printDebug(constraints[idx[j]])
-            #     print("\n")
-            # end
+            println("\n\n---RECALCULATING---")
+            print("- Old Function: ")
+            printDebug(func)
+            print("\n")
+            for j = 1:i
+                println("- Old Constraint ", j, ":")
+                print("    ")
+                printDebug(constraints[idx[j]])
+                print("\n")
+            end
             # --- DEBUGGING ---
             
             new_cons = constraints[idx[1:i]]
             new_guess, new_func, new_cons = reduceDim(guess, func, new_cons)
-            # println("---FINISHED CALCULATING---\n") 
+            println("---FINISHED CALCULATING---\n") 
+
+            if length(new_cons) != 0
+            # if 0 == 0
+                println("+++ CALLING RECURSION ON ABOVE PROBLEM +++")
+                guess = subSeidel(new_guess, new_func, new_cons)
+                println("+++ LEAVING RECURSION +++")
+            else
+                println("No more constraints, moving to next")
+            end
             
-            # println("+++ CALLING RECURSION ON ABOVE PROBLEM +++")
-            guess = subSeidel(new_guess, new_func, new_cons)
-            # println("+++ LEAVING RECURSION +++")
         else
-            # println("success on constraint: ", i)
+            print("success on constraint: ")
+            printDebug(constraints[i])
+            print("\n")
         end
     end
 

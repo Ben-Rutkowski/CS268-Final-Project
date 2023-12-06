@@ -45,9 +45,7 @@ function calcCovMat(mat, mean)
     try 
         cholesky(out)
     catch
-        # println(out)
-        # println("fail")
-        return I(row)
+        return out + (1e-2)*I(row)
     end
     return out
 end
@@ -104,10 +102,19 @@ mutable struct MultiNormal
     end
 end
 
-function sample(D::MultiNormal, n)
+function sample(D::MultiNormal, n, B_FIX=-1)
     dist = D.Dist
-    return rand(dist, n)
+    x = rand(dist, n)
+    return correctMatrix(x, B_FIX)
 end
+
+function recalc!(D::MultiNormal, mat)
+    mean = calcMeanMat(mat)
+    cov  = calcCovMat(mat, mean)
+    dist = MvNormal(mean, cov)
+
+    D.Dist = dist
+end;
 
 # ================ Cross Entropy with Independant Distributions ================
 function crossEntropy(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
@@ -140,6 +147,13 @@ function quadPenalty(M::DemandSystem, x)
         # println("Node ", i, " penalty: ", gi)
         penalty += gi*gi
     end
+
+    for k = 1:Int(length(x)-1)
+        gk = max(variableConstraint_k(x, k), 0)
+        # println("Variable ", k, " penalty: ", gk)
+        penalty += gk*gk
+    end
+
     return penalty
 end
 

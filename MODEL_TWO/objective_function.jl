@@ -38,14 +38,22 @@ end;
 #     pushes the z component to be nonnegative
 function correct(x, B_FIX=-1)
     M, b = (length(x)-1)/3, round(x[end])
-    x_correct = []
+    x_correct = Float64[]
 
     order = sortperm( [x[3*i-2] for i in 1:Int(M)] )
     for k = 1:Int(M)
         append!(x_correct, x[3*order[k]-2:3*order[k]])
-        if x_correct[end] < 0.0
-            x_correct[end] = 0.0
-        end
+        # if x_correct[end] < 0.0
+        #     x_correct[end] = 0.0
+        # end
+
+        # if x_correct[end-2] < 0.0
+        #     x_correct[end-2] = 0.0
+        # end
+
+        # if x_correct[end-1] < 0.0
+        #     x_correct[end-1] = 0.0
+        # end
     end
 
     b = B_FIX != -1 ? B_FIX : b
@@ -125,6 +133,11 @@ function nodeConstraint_i(M::DemandSystem, x, i)
     
     return nDmd(M, i) - sum
 end;
+
+# --- INEQUALITY CONSTRAINT k: Bound constraint all positions and cost must be nonnegative ---
+function variableConstraint_k(x, k)
+    return -x[k]
+end
 
 # --- EQUALITY CONSTRAINT: The number of stations built is an integer in 1,...,M ---
 #       (  In the form of h(x) = 0  )

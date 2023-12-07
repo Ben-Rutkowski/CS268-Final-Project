@@ -214,10 +214,16 @@ function reduceConstraintList(cons, target::Constraint)
     return new_cons
 end
 
+# ==== The wrapper function for seidel ====
+function seidel(func::Objective, cons)
+    guess = initialGuess(func)
+    return recurseSeidel(guess, func, cons)
+end
+
 # --- Subroutine for Seidel ---
 function recurseSeidel(guess, func::Objective, cons)
-    # idx = randperm(Int(length(cons)))
-    idx = [i for i in 1:Int(length(cons))]
+    idx = randperm(Int(length(cons)))
+    # idx = [i for i in 1:Int(length(cons))]
 
     for i = 1:Int(length(cons))
         success = testConstraint(guess, cons[idx[i]])

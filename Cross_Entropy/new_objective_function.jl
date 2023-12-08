@@ -64,7 +64,7 @@ function correct(x, B_FIX=-1)
     # --- Correct z values ---
     for k = 1:Int(M)
         if x[3*k] <= 0.0
-            x[3*k] = 0.1
+            x[3*k] = 1.0
         end
     end
 
@@ -158,8 +158,8 @@ end
 
 # --- Takes a capacity vector and returns a new design variable with capacities ---
 function zToX(z, x)
-    M = Int((length(x)-1)/3)
-    for k = 1:M
+    b = Int(length(z))
+    for k = 1:b
         x[3*k] = z[k]
     end
     return x
@@ -232,7 +232,8 @@ function pushToFeasible(D::DemandSystem, x)
 
     z = simplex(A_lp, b_lp, c_lp)
 
-    return zToX(z, x)
+    z = zToX(z, x)
+    return z
 end
 
 function pushToFeasibleMatrix(D::DemandSystem, X)

@@ -30,7 +30,8 @@ function calcMeanMat(mat)
     for i = 1:col
         mean += mat[:,i]
     end
-    return mean/col
+    mean = mean/col
+    return mean
 end
 
 # --- Calculates the covariance matrix given a matrix with n rows and a mean vec ---
@@ -78,7 +79,14 @@ function initialSamples(D::DemandSystem, M, m, b, B_FIX=-1)
         x_sample = vcat(x_sample, dem_values)   
     end
 
-    x_sample = vcat(x_sample, b*ones(1, m))
+    if B_FIX == -1
+        b_samples = float(rand(1:M, 1, m))
+    else
+        b_samples = b*ones(1, m)
+    end
+
+    # x_sample = vcat(x_sample, b*ones(1, m))
+    x_sample = vcat(x_sample, b_samples)
 
     return x_sample
 end
@@ -86,7 +94,7 @@ end
 
 # ================ Cross Entropy Methods ================
 function crossEntropyLegalCorrection(D::DemandSystem, func, M, k_max, B_FIX=-1, m=100, m_elite=10)
-    x_sample = initialSamples(D, M, m, M)
+    x_sample = initialSamples(D, M, m, M, B_FIX)
     order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
     x_legal  = first_mLegal(D, x_sample, order, m_elite)
     P = recalc(x_legal)
@@ -109,7 +117,7 @@ end
 
 
 function crossEntropy(D::DemandSystem, func, M, k_max, B_FIX=-1, m=100, m_elite=10)
-    x_sample = initialSamples(D, M, m, M)
+    x_sample = initialSamples(D, M, m, M, B_FIX)
     order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
     x_elite  = first_mLegal(D, x_sample, order, m_elite)
     P = recalc(x_elite)

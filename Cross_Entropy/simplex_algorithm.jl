@@ -2,22 +2,32 @@ using LinearAlgebra
 
 # --- Solves a general position LP ---
 function simplex(A, b, c)
-    n = size(A,2)
-    A_eq, b_eq, c_eq = convertToEqaulityLP(A, b, c)
-    x = equalityLP_Minimize(A_eq, b_eq, c_eq)
-    return x[1:n]
-end
+    # ===DEBUGGING===
+    # println("Optimizing Ax <= b:")
+    # printMat(A, b)
+    # print("c = ", c, "\n\n")
+    # ===DEBUGGING===
 
-# --- Takes an inequality LP and returns the equality form and reduces ---
-#     it to be linearly independent.
-function convertToEqaulityLP(A, b, c)
-    m = size(A, 1)
+    m, n = size(A)
 
     A_eq = hcat(A, I(m))
     b_eq = b
     c_eq = vcat(c, zeros(m))
 
-    return A_eq, b_eq, c_eq
+    # ===DEBUGGING===
+    # println("Equivalent equality problem Ax = b:")
+    # printMat(A_eq, b_eq, true)
+    # print("c = ", c_eq )
+    # ===DEBUGGING===
+
+    x = equalityLP_Minimize(A_eq, b_eq, c_eq)
+
+    # ===DEBUGGING===
+    # println("Rate of feasiblitly: ", A_eq*x-b_eq)
+    # println("Objective cost: ", c_eq'*x)
+    # ===DEBUGGING===
+
+    return x[1:n]
 end
 
 # --- Converts xB to x ---
@@ -72,8 +82,16 @@ end
 # --- Minimizes an LP in equality form given a partition ---
 function equalityLP_MinimizePartition(A, b, c, B_idx)
     is_optimal = false
+    term  = size(A,2)*size(A, 2)
+
+    count = 0
     while !is_optimal
+        count += 1
         B_idx, is_optimal = stepVertex(A, b, c, B_idx)
+        if count == term
+            # println("STOPPING")
+            break
+        end
     end
     return B_idx
 end
@@ -147,4 +165,18 @@ function stepVertex(A, b, c, B_idx)
     j = findfirst(isequal(B_idx[p]), B_idx)
     B_idx[j] = V_idx[q]
     return B_idx, false
+end
+
+
+# ================ DEBUGGING ================
+function printMat(A, b, eq=false)
+    symb = eq ? "=" : "<="
+
+    m, n = size(A)
+    for i = 1:m
+        for j = 1:n
+            print(A[i,j], "  ")
+        end
+        print("  ", symb, "  ", b[i], "\n")
+    end
 end

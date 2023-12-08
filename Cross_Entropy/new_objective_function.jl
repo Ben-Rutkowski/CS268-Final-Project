@@ -90,7 +90,7 @@ function correctMatrix(M, B_FIX=-1)
 end
 
 # --- Returns first m legal vectors in a matrix ---
-function first_mLegal(D::DemandSystem, mat, m_elite)
+function first_mLegalOLD(D::DemandSystem, mat, m_elite)
     m, n = size(mat)
     holder = zeros(m, 1)
     count = 0
@@ -106,6 +106,25 @@ function first_mLegal(D::DemandSystem, mat, m_elite)
     end
 
     return holder[:,2:end]
+end
+
+# --- Takes raw sample data and optimization order ---
+function first_mLegal(D::DemandSystem, mat, order, m_elite)
+    n = length(order)
+    legal_idx = []
+    remain_idx = []
+    for j = 1:n
+        x_cur = mat[:,order[j]]
+        if isLegal(sys, x_cur)
+            pushfirst!(legal_idx, order[j])
+        else
+            pushfirst!(remain_idx, order[j])
+        end
+    end
+
+    elite_idx = vcat(legal_idx, remain_idx)
+
+    return mat[:,elite_idx[1:m_elite]]
 end
 
 # --- Returns whether or not variable is legal ---

@@ -60,6 +60,14 @@ end;
 #     pushes the z component to be nonnegative
 function correct(x, B_FIX=-1)
     M, b = (length(x)-1)/3, round(x[end])
+
+    # --- Correct z values ---
+    for k = 1:Int(M)
+        if x[3*k] <= 0.0
+            x[3*k] = 0.1
+        end
+    end
+
     x_correct = Float64[]
 
     order = sortperm( [x[3*i-2] for i in 1:Int(M)] )

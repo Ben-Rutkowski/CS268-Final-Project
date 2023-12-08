@@ -27,8 +27,6 @@ function simplex(A, b, c)
     # println("Objective cost: ", c_eq'*x)
     # ===DEBUGGING===
 
-    # println(x)
-
     return x[1:n]
 end
 
@@ -84,8 +82,8 @@ end
 # --- Minimizes an LP in equality form given a partition ---
 function equalityLP_MinimizePartition(A, b, c, B_idx)
     is_optimal = false
-    # term = size(A,2)*size(A, 2)
-    term = size(A, 2)
+    term = size(A,2)*size(A, 2)
+    # term = size(A, 2)
 
     count = 0
     while !is_optimal

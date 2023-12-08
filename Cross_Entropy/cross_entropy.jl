@@ -56,44 +56,6 @@ function recalc(x_elite)
     return MultivariateNormal(mean, cov)
 end
 
-# --- Creates an initial distribution of a multivariate normal ---
-#     with the mean directly in the center, with the capacities 
-#     slpit four ways.
-# function initialDistribution(D::DemandSystem, M)
-#     x_min, x_max = D.x_min, D.x_max
-#     y_min, y_max = D.y_min, D.y_max
-#     demand_max = D.demand_max
-
-#     x_mean = 0.5*(x_max + x_min)
-#     y_mean = 0.5*(y_max + y_min)
-
-#     optimal_cap = 0
-#     Nodes, r = D.Nodes, D.r
-#     N = Int(length(Nodes)/2)
-#     for i = 1:N
-#         nu, nv = nCrd(D,i)
-#         Fi     = nDmd(D,i)
-#         d_ik   = i_kDist(nu, nv, x_mean, y_mean)
-#         coef   = exp(-r*d_ik)
-#         capacity = Fi/(M*coef)
-
-#         if (capacity > optimal_cap)
-#             optimal_cap = capacity
-#         end
-#     end
-
-#     vec = Float64[]
-#     for k = 1:M
-#         push!(vec, x_mean)
-#         push!(vec, y_mean)
-#         push!(vec, demand_max)
-#     end
-#     push!(vec, M)
-
-#     return MultivariateNormal(vec, diagm(vec))
-# end
-
-
 function initialSamples(D::DemandSystem, M, m, b, B_FIX=-1)
     x_min, x_max = D.x_min, D.x_max
     y_min, y_max = D.y_min, D.y_max
@@ -116,19 +78,14 @@ function initialSamples(D::DemandSystem, M, m, b, B_FIX=-1)
         x_sample = vcat(x_sample, dem_values)   
     end
 
-    # --- process b ---
-
     x_sample = vcat(x_sample, b*ones(1, m))
 
     return x_sample
 end
 
 
-# ================ Cross Entropy with Independant Distributions ================
-function crossEntropyLegalCorrection(D::DemandSystem, func, M, k_max, m=100, m_elite=10, B_FIX=-1)
-    x_legal = NaN
-    # P = initialDistribution(D, M)
-
+# ================ Cross Entropy Methods ================
+function crossEntropyLegalCorrection(D::DemandSystem, func, M, k_max, B_FIX=-1, m=100, m_elite=10)
     x_sample = initialSamples(D, M, m, M)
     order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
     x_legal  = first_mLegal(D, x_sample, order, m_elite)
@@ -142,12 +99,16 @@ function crossEntropyLegalCorrection(D::DemandSystem, func, M, k_max, m=100, m_e
         x_legal = pushToFeasibleMatrix(D, x_legal)
         P = recalc(x_legal)
     end
+
+    x_sample = correctMatrix(rand(P, m), B_FIX)
+    order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
+    x_legal  = first_mLegal(D, x_sample, order, m_elite)
     
     return x_legal[:,1], pushToFeasible(D, x_legal[:,1])
 end
 
 
-function crossEntropy(D::DemandSystem, func, M, k_max, m=100, m_elite=10, B_FIX=-1)
+function crossEntropy(D::DemandSystem, func, M, k_max, B_FIX=-1, m=100, m_elite=10)
     x_sample = initialSamples(D, M, m, M)
     order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
     x_elite  = first_mLegal(D, x_sample, order, m_elite)
@@ -160,14 +121,13 @@ function crossEntropy(D::DemandSystem, func, M, k_max, m=100, m_elite=10, B_FIX=
         x_elite = x_sample[:,order[1:m_elite]]        
         x_elite = pushToFeasibleMatrix(D, x_elite)
         P = recalc(x_elite)
-
-        # x_legal = first_mLegal(D, x_sample, order, m_elite)
-        # x_legal = pushToFeasibleMatrix(D, x_legal)
-        # P = recalc(x_legal)
     end
+
+    x_sample = correctMatrix(rand(P, m), B_FIX)
+    order    = sortperm( [func(x_sample[:,i]) for i in 1:m] )
+    x_elite  = x_sample[:,order[1:m_elite]]        
     
     return x_elite[:,1], pushToFeasible(D, x_elite[:,1])
-    # return x_legal[:,1], pushToFeasible(D, x_legal[:,1])
 end
 
 
@@ -325,3 +285,40 @@ end
 
 #     D.Dist = dist
 # end;
+
+# --- Creates an initial distribution of a multivariate normal ---
+#     with the mean directly in the center, with the capacities 
+#     slpit four ways.
+# function initialDistribution(D::DemandSystem, M)
+#     x_min, x_max = D.x_min, D.x_max
+#     y_min, y_max = D.y_min, D.y_max
+#     demand_max = D.demand_max
+
+#     x_mean = 0.5*(x_max + x_min)
+#     y_mean = 0.5*(y_max + y_min)
+
+#     optimal_cap = 0
+#     Nodes, r = D.Nodes, D.r
+#     N = Int(length(Nodes)/2)
+#     for i = 1:N
+#         nu, nv = nCrd(D,i)
+#         Fi     = nDmd(D,i)
+#         d_ik   = i_kDist(nu, nv, x_mean, y_mean)
+#         coef   = exp(-r*d_ik)
+#         capacity = Fi/(M*coef)
+
+#         if (capacity > optimal_cap)
+#             optimal_cap = capacity
+#         end
+#     end
+
+#     vec = Float64[]
+#     for k = 1:M
+#         push!(vec, x_mean)
+#         push!(vec, y_mean)
+#         push!(vec, demand_max)
+#     end
+#     push!(vec, M)
+
+#     return MultivariateNormal(vec, diagm(vec))
+# end

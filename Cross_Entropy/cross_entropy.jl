@@ -50,72 +50,6 @@ function calcCovMat(mat, mean)
     return out
 end
 
-
-# ================ Calculating Distributions and Sampling ================
-# --- Split Distribution ---
-# mutable struct SplitDist
-#     MvNorms
-#     DiscNorm
-
-#     function SplitDist(norms, disc)
-#         return new(norms, bi)
-#     end
-# end
-
-# function sample(D::SplitDist, n, B_FIX=-1)
-#     M = length(D.MvNorms)
-#     x = rand(D.MvNorms[1], n)
-#     for k = 2:M
-#         m = rand(D.MvNorms[k], n)
-#         x = vcat(x, m)
-#     end
-#     b = transpose(rand(D.DiscNorm,n))
-#     x = vcat(x, b)
-#     x = correctMatrix(x, B_FIX)
-#     return x
-# end
-
-# function recalc!(D::SplitDist, mat)
-#     M = Int((size(mat)[1]-1)/3)
-#     mvnorms = []
-#     for i = 1:M
-#         mean = calcMeanMat(mat[3*i-2:3*i,:])
-#         cov  = calcCovMat(mat[3*i-2:3*i,:], mean)
-#         dist = MvNormal(mean, cov)
-#         push!(mvnorms, dist)
-#     end
-
-#     mean = calcMean(mat[end,:])
-#     std  = sqrt(calcVar(mat[end,:], mean))
-#     discnorm   = Normal(mean, std)
-
-#     D.MvNorms  = mvnorms
-#     D.DiscNorm = discnorm
-# end;
-
-# --- Multivariate Normal Distribution ---
-mutable struct MultiNormal
-    Dist
-
-    function MultiNormal(dist_in)
-        new(dist_in)
-    end
-end
-
-function sample(D::MultiNormal, n, B_FIX=-1)
-    dist = D.Dist
-    x = rand(dist, n)
-    return correctMatrix(x, B_FIX)
-end
-
-function recalc!(D::MultiNormal, mat)
-    mean = calcMeanMat(mat)
-    cov  = calcCovMat(mat, mean)
-    dist = MvNormal(mean, cov)
-
-    D.Dist = dist
-end;
-
 function recalc(x_elite)
     mean = calcMeanMat(x_elite)
     cov  = calcCovMat(x_elite, mean)
@@ -126,7 +60,6 @@ end
 #     with the mean directly in the center, with the capacities 
 #     slpit four ways.
 function initialDistribution(D::DemandSystem, M)
-
     x_min, x_max = D.x_min, D.x_max
     y_min, y_max = D.y_min, D.y_max
     demand_max = D.demand_max
@@ -157,17 +90,11 @@ function initialDistribution(D::DemandSystem, M)
     end
     push!(vec, M)
 
-
     return MultivariateNormal(vec, diagm(vec))
 end
 
 
 # ================ Cross Entropy with Independant Distributions ================
-# function crossEntropy(func, P, k_max, m=100, m_elite=10, B_FIX=-1)
-#     # TODO: add sub routine to nudge the elite samples into the feasible range
-#     #       by calling subCrossEntropy again on a different anonymous function
-# end
-
 function crossEntropy(D::DemandSystem, func, P, k_max, m=100, m_elite=10, B_FIX=-1)
     x_elite = NaN
 
@@ -274,3 +201,68 @@ end
 
 #     return pushToFeasible(D, x)
 # end
+
+# ================ Calculating Distributions and Sampling ================
+# --- Split Distribution ---
+# mutable struct SplitDist
+#     MvNorms
+#     DiscNorm
+
+#     function SplitDist(norms, disc)
+#         return new(norms, bi)
+#     end
+# end
+
+# function sample(D::SplitDist, n, B_FIX=-1)
+#     M = length(D.MvNorms)
+#     x = rand(D.MvNorms[1], n)
+#     for k = 2:M
+#         m = rand(D.MvNorms[k], n)
+#         x = vcat(x, m)
+#     end
+#     b = transpose(rand(D.DiscNorm,n))
+#     x = vcat(x, b)
+#     x = correctMatrix(x, B_FIX)
+#     return x
+# end
+
+# function recalc!(D::SplitDist, mat)
+#     M = Int((size(mat)[1]-1)/3)
+#     mvnorms = []
+#     for i = 1:M
+#         mean = calcMeanMat(mat[3*i-2:3*i,:])
+#         cov  = calcCovMat(mat[3*i-2:3*i,:], mean)
+#         dist = MvNormal(mean, cov)
+#         push!(mvnorms, dist)
+#     end
+
+#     mean = calcMean(mat[end,:])
+#     std  = sqrt(calcVar(mat[end,:], mean))
+#     discnorm   = Normal(mean, std)
+
+#     D.MvNorms  = mvnorms
+#     D.DiscNorm = discnorm
+# end;
+
+# --- Multivariate Normal Distribution ---
+# mutable struct MultiNormal
+#     Dist
+
+#     function MultiNormal(dist_in)
+#         new(dist_in)
+#     end
+# end
+
+# function sample(D::MultiNormal, n, B_FIX=-1)
+#     dist = D.Dist
+#     x = rand(dist, n)
+#     return correctMatrix(x, B_FIX)
+# end
+
+# function recalc!(D::MultiNormal, mat)
+#     mean = calcMeanMat(mat)
+#     cov  = calcCovMat(mat, mean)
+#     dist = MvNormal(mean, cov)
+
+#     D.Dist = dist
+# end;

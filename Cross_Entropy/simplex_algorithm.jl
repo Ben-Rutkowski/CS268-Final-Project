@@ -169,14 +169,14 @@ end
 
 
 # ================ DEBUGGING ================
-function printMat(A, b, eq=false)
-    symb = eq ? "=" : "<="
+# function printMat(A, b, eq=false)
+#     symb = eq ? "=" : "<="
 
-    m, n = size(A)
-    for i = 1:m
-        for j = 1:n
-            print(A[i,j], "  ")
-        end
-        print("  ", symb, "  ", b[i], "\n")
-    end
-end
+#     m, n = size(A)
+#     for i = 1:m
+#         for j = 1:n
+#             print(A[i,j], "  ")
+#         end
+#         print("  ", symb, "  ", b[i], "\n")
+#     end
+# end

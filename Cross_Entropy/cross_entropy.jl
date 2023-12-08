@@ -1,4 +1,4 @@
-# include("/Users/benjaminrutkowski/School Code Projects/CS268-Final-Project/MODEL_TWO/objective_function.jl.jl")
+include("/Users/benjaminrutkowski/School Code Projects/CS268-Final-Project/Cross_Entropy/new_objective_function.jl")
 using Distributions
 using LinearAlgebra 
 
@@ -95,20 +95,30 @@ end
 
 
 # ================ Cross Entropy with Independant Distributions ================
-function crossEntropy(D::DemandSystem, func, P, k_max, m=100, m_elite=10, B_FIX=-1)
+function crossEntropy(D::DemandSystem, func, M, k_max, m=100, m_elite=10, B_FIX=-1)
     x_elite = NaN
+    x_legal = NaN
+
+    P = initialDistribution(D, M)
 
     for k = 1:k_max
-        x_sample = correctMatrix(rand(dist, m), B_FIX)
+        x_sample = correctMatrix(rand(P, m), B_FIX)
     
         order   = sortperm( [func(x_sample[:,i]) for i in 1:m] )
         x_elite = x_sample[:,order[1:m_elite]]        
         x_elite = pushToFeasibleMatrix(D, x_elite)
 
+
+        # x_legal = first_mLegal(D, x_sample[:,order], m_elite)
+        # x_legal = pushToFeasibleMatrix(D, x_legal)
+
         P = recalc(x_elite)
+
+        # P = recalc(x_legal)
     end
     
     return x_elite[:,1], pushToFeasible(D, x_elite[:,1])
+    # return x_legal[:,1], pushToFeasible(D, x_legal[:,1])
 end
 
 

@@ -27,6 +27,8 @@ function simplex(A, b, c)
     # println("Objective cost: ", c_eq'*x)
     # ===DEBUGGING===
 
+    # println(x)
+
     return x[1:n]
 end
 
@@ -82,7 +84,8 @@ end
 # --- Minimizes an LP in equality form given a partition ---
 function equalityLP_MinimizePartition(A, b, c, B_idx)
     is_optimal = false
-    term  = size(A,2)*size(A, 2)
+    # term = size(A,2)*size(A, 2)
+    term = size(A, 2)
 
     count = 0
     while !is_optimal
@@ -169,14 +172,14 @@ end
 
 
 # ================ DEBUGGING ================
-# function printMat(A, b, eq=false)
-#     symb = eq ? "=" : "<="
+function printMat(A, b, eq=false)
+    symb = eq ? "=" : "<="
 
-#     m, n = size(A)
-#     for i = 1:m
-#         for j = 1:n
-#             print(A[i,j], "  ")
-#         end
-#         print("  ", symb, "  ", b[i], "\n")
-#     end
-# end
+    m, n = size(A)
+    for i = 1:m
+        for j = 1:n
+            print(A[i,j], "  ")
+        end
+        print("  ", symb, "  ", b[i], "\n")
+    end
+end

@@ -155,7 +155,8 @@ end;
 # ================ Constraint Functions ================
 # --- Squared distance between a node and a station ---
 function i_kDist(nu, nv, sx, sy)
-    return (nu-sx)*(nu-sx) + (nv-sy)*(nv-sy)
+    # return (nu-sx)*(nu-sx) + (nv-sy)*(nv-sy)
+    return sqrt((nu-sx)*(nu-sx) + (nv-sy)*(nv-sy))
 end;
 
 # ================ Distance Coefficient ================

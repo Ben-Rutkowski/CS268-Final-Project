@@ -1,4 +1,5 @@
-include("/Users/benjaminrutkowski/School Code Projects/CS268-Final-Project/Cross_Entropy/new_objective_function.jl")
+# include("new_objective_function.jl")
+
 using Distributions
 using LinearAlgebra 
 

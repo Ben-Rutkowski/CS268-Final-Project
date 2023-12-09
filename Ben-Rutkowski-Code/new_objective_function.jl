@@ -1,4 +1,4 @@
-include("/Users/benjaminrutkowski/School Code Projects/CS268-Final-Project/Cross_Entropy/simplex_algorithm.jl")
+# include("simplex_algorithm.jl")
 
 # ================ Demand System ================
 mutable struct DemandSystem
